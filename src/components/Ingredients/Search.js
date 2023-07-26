@@ -26,7 +26,7 @@ const Search = React.memo((props) => {
       const query =
         enteredFilter.length === 0
           ? ""
-          : `?orderBy="title&equalTo="${enteredFilter}"`;
+          : `?orderBy="title"&equalTo="${enteredFilter}"`; //오타수정
 
       const response = await fetch(
         `https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients.json${query}`

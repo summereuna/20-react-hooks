@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import IngredientForm from "./IngredientForm";
 import Search from "./Search";
@@ -38,13 +38,25 @@ const Ingredients = () => {
     fetchData();
   }, []);
 
-  // useEffect(() => {
-  //   console.log("재료 목록 렌더링: ", userIngredients);
-  // }, [userIngredients]);
+  useEffect(() => {
+    console.log("재료 목록 렌더링: ", userIngredients);
+  }, [userIngredients]);
 
-  const filteredIngredientsHandler = (filteredIngredients) => {
+  //컴포넌트 첫 렌더링시 자녀인 Search 컴포넌트를 렌더링할 때 onLoadIngredients()도 호출하게 된다.
+  //그러면 그 함수 안의 setUserIngredients()가 호출되어 state가 변경된다.
+  //따라서 Ingredients 컴포넌트가 리렌더링된다.
+  //그러면 또 다시 새로운 filteredIngredientsHandler() 객체 인스턴스가 생성되는데
+  //새로 생성된 인스턴스가 새로운 참조값으로 onLoadIngredients 프롭에 전달되면
+  //Search 컴포넌트의 useEffect에서 종속하는 onLoadIngredients 값이 달라졌다고 판단되므로 이펙트가 재실행된다.
+  //이렇게 무한 루프에 빠져버린다.
+  //이를 막기 위해 useCallback()을 사용하자.
+  const filteredIngredientsHandler = useCallback((filteredIngredients) => {
     setUserIngredients(filteredIngredients);
-  };
+  }, []);
+
+  //이렇게 하면 이 함수는 다시 실행되지 않고 리액트는 이 함수를 캐싱(cache)하여 리렌더링되어도 남아있게 한다.
+  //따라서 Ingredients 컴포넌트가 리렌더링되어도 이 함수는 새로 생성되지 않아서 참조값이 바뀌지 않는다.
+  // 따라서 Search 컴포넌트의 onLoadIngredients에 넘겨준 함수는 이전에 렌더링할 때 사용한 함수의 참조값과 같으므로 이펙트 함수도 재실행되지 않는다.
 
   const addIngredientHandler = async (newIngredient) => {
     //서버: firebase
