@@ -9,6 +9,9 @@ const Ingredients = () => {
   //여기서 재료를 관리한다는건 useState()를 사용해야 한다는 뜻
   const [userIngredients, setUserIngredients] = useState([]);
 
+  //로딩 스피너 화면에 표시하기
+  const [isLoading, setIsLoading] = useState(false);
+
   //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
 
   useEffect(() => {
@@ -32,6 +35,7 @@ const Ingredients = () => {
   // 따라서 Search 컴포넌트의 onLoadIngredients에 넘겨준 함수는 이전에 렌더링할 때 사용한 함수의 참조값과 같으므로 이펙트 함수도 재실행되지 않는다.
 
   const addIngredientHandler = async (newIngredient) => {
+    setIsLoading(true);
     //서버: firebase
     const response = await fetch(
       "https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients.json",
@@ -45,6 +49,10 @@ const Ingredients = () => {
     );
 
     const resData = await response.json();
+
+    //응답 받으면 state 업데이트 =>  컴포넌트 리렌더링됨
+    setIsLoading(false);
+
     //서버에 업데이트 요청 완료!되면 로컬도 업데이트하기
     setUserIngredients((prev) => [
       ...prev,
@@ -57,6 +65,8 @@ const Ingredients = () => {
 
   // 재료 삭제
   const removeIngredientHandler = (ingredientId) => {
+    setIsLoading(true);
+
     // 서버에서 삭제하는 기능
     fetch(
       `https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
@@ -66,6 +76,8 @@ const Ingredients = () => {
         method: "DELETE",
       }
     ).then((response) => {
+      //응답 받으면 isLoading 끄기 =>  리렌더링
+      setIsLoading(false);
       // 삭제하는 거라서 어떤 응답오는지는 중요하지 않고 화면에 재료 목록 업데이트하는게 중요
       // 로컬에서 삭제하는 기능
       setUserIngredients((prevIngredients) =>
@@ -76,7 +88,10 @@ const Ingredients = () => {
 
   return (
     <div className="App">
-      <IngredientForm onAddIngredient={addIngredientHandler} />
+      <IngredientForm
+        onAddIngredient={addIngredientHandler}
+        loading={isLoading}
+      />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
         <IngredientList
