@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import IngredientForm from "./IngredientForm";
 import Search from "./Search";
 import IngredientList from "./IngredientList";
+import ErrorModal from "../UI/ErrorModal";
 
 const Ingredients = () => {
   //여기서 Form에서 인풋 받아서 리스트로 출력함
@@ -12,8 +13,10 @@ const Ingredients = () => {
   //로딩 스피너 화면에 표시하기
   const [isLoading, setIsLoading] = useState(false);
 
-  //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
+  //에러 핸들링
+  const [error, setError] = useState();
 
+  //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
   useEffect(() => {
     console.log("재료 목록 렌더링: ", userIngredients);
   }, [userIngredients]);
@@ -64,18 +67,18 @@ const Ingredients = () => {
   };
 
   // 재료 삭제
-  const removeIngredientHandler = (ingredientId) => {
+  const removeIngredientHandler = async (ingredientId) => {
     setIsLoading(true);
-
-    // 서버에서 삭제하는 기능
-    fetch(
-      `https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
-      // 노드 순서: ingredients/재료id
-      // 삭제할 노드 지정하여 삭제 요청 보내기
-      {
-        method: "DELETE",
-      }
-    ).then((response) => {
+    try {
+      // 서버에서 삭제하는 기능
+      await fetch(
+        `https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+        // 노드 순서: ingredients/재료id
+        // 삭제할 노드 지정하여 삭제 요청 보내기
+        {
+          method: "DELETE",
+        }
+      );
       //응답 받으면 isLoading 끄기 =>  리렌더링
       setIsLoading(false);
       // 삭제하는 거라서 어떤 응답오는지는 중요하지 않고 화면에 재료 목록 업데이트하는게 중요
@@ -83,11 +86,24 @@ const Ingredients = () => {
       setUserIngredients((prevIngredients) =>
         prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
       );
-    });
+
+      //fetch는 Promise 반환하므로 catch()로 에러 잡을 수 있다.
+    } catch (error) {
+      setError("Something went wrong!");
+      setIsLoading(false);
+      // 동일한 시점에 같은 함수 안에서 요청한 모든 상태 업데이트는 일괄 처리 된다(batch)
+      //setError로 렌더링 한번 되고 setIsLoading로 렌더링 한 번 더 되는 것이 아니라
+      //렌더링 한번 일어난단 소리임 ㅇㅇ
+    }
+  };
+
+  const clearError = () => {
+    setError(null); //모달창 닫기> null은 거짓으로 취급됨
   };
 
   return (
     <div className="App">
+      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
         loading={isLoading}
