@@ -55,10 +55,23 @@ const Ingredients = () => {
     ]);
   };
 
+  // 재료 삭제
   const removeIngredientHandler = (ingredientId) => {
-    setUserIngredients((prevIngredients) =>
-      prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
-    );
+    // 서버에서 삭제하는 기능
+    fetch(
+      `https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients/${ingredientId}.json`,
+      // 노드 순서: ingredients/재료id
+      // 삭제할 노드 지정하여 삭제 요청 보내기
+      {
+        method: "DELETE",
+      }
+    ).then((response) => {
+      // 삭제하는 거라서 어떤 응답오는지는 중요하지 않고 화면에 재료 목록 업데이트하는게 중요
+      // 로컬에서 삭제하는 기능
+      setUserIngredients((prevIngredients) =>
+        prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
+      );
+    });
   };
 
   return (
