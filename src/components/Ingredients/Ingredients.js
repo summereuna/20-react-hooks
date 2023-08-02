@@ -1,22 +1,17 @@
-import React, { useCallback, useEffect, useState, useReducer } from "react";
+import React, { useCallback, useEffect, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import Search from "./Search";
 import IngredientList from "./IngredientList";
 import ErrorModal from "../UI/ErrorModal";
 
-//리듀서 함수는 리액트로부터 자동으로 2개의 인자를 받는다.
-//첫 번째 인자: 현재 로컬에 저장된 state값
-//두 번째 인자: 상태를 업데이트하는 액션
-//액션은 객체 형태로, 타입에 따라 상태를 업데이트 하는 액션을 다르게 설정하면 된다.
-//switch 문으로 action의 type에 따라 case를 정의하여 서로 다른 코드를 수행하도록 정의한다.
 const ingredientReducer = (currentIngredients, action) => {
   switch (action.type) {
-    case "SET": // 설정 GET: 새로운 재료 만들어서 반환
-      return action.ingredients; // 액션의 ingredients 프로퍼티에 기존 state 대체하는 재료 배열 넣어 반환
-    case "ADD": // 추가 POST: 새로운 상태(배열) 스냅샷 반환
-      return [...currentIngredients, action.ingredient]; //현재 상태(배열)에 새로운 항목 추가한 후 새로운 배열 반환
-    case "DELETE": // 삭제 DELETE: 현재 값에 필터 적용하여 모든 재료 항목의 id와 액션의 id 비교하여 동일하지 않은 재료만 남긴 새로운 배열 반환
+    case "SET":
+      return action.ingredients;
+    case "ADD":
+      return [...currentIngredients, action.ingredient];
+    case "DELETE":
       return currentIngredients.filter(
         (ingredient) => ingredient.id !== action.id
       );
@@ -25,21 +20,43 @@ const ingredientReducer = (currentIngredients, action) => {
   }
 };
 
+// http 요청에 대한 리듀서
+const httpReducer = (currentHttpState, action) => {
+  switch (action.type) {
+    case "SEND": //http 요청 전송 직전에 동작할 내용
+      // 리듀서가 알아서 요청까지 보내는건 아니다. 그건 밑에 코드에서 ㅇㅇ..
+      //여기서는 요청 전송과 관련있고 UI에 영향주는 상태들에 대한 상태만 관리하면 된다.
+      //즉 이 state에 의해 로딩인디케이터나 에러창 표시할 건지 결정할 수 있도록 하면 된다.
+      return { loading: true, error: null };
+
+    case "RESPONSE": // http 요청 응답 도착 시 동작할 내용
+      return { ...currentHttpState, loading: false };
+    //일반적으로 프로퍼티에 원하는 값 넣기 전에 원래 있던 state 값을 가져온 후, 전개연산자 사용해 키-값 쌍을 꺼내고 꺼낸 값을 새로 만든 객체에 합쳐준다.
+    //그래야 기존 state에서 누락되는 값이 없다 ㅇㅇ!
+    // loading: false 로 기존 loading 프로퍼티를 덮어 씌워주는 거다.
+    //새로 만들어지는 객체는 새로운 state로 반환된다.
+
+    case "ERROR": // http 요청 오류 발생 시 동작할 내용
+      return { loading: false, error: action.errorMessage };
+
+    case "CLEAR": // 에러 모달 닫을 때 동작할 내용
+      return { ...currentHttpState, error: null };
+
+    default:
+      throw new Error("여기로 오지 마세요!");
+  }
+};
+
 const Ingredients = () => {
-  //useReducer() 호출하여 초기화하기
-  //인수로 리듀서 함수 받음, 두번째 인수는 옵션이긴 한데, 디폴트 state 넣을 수 있다. 여기엔 빈배열 넣자. 이 값이 currentIngredients로 전달된다.
   const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
-  //useReducer()는 userIngredients와 dispatch 함수를 반환한다.
+  const [httpState, dispatchHttp] = useReducer(httpReducer, {
+    //초기 값으로 객체 보내자.
+    loading: false,
+    error: null,
+  });
 
-  //여기서 Form에서 인풋 받아서 리스트로 출력함
-  //여기서 재료를 관리한다는건 useState()를 사용해야 한다는 뜻
-  // const [userIngredients, setUserIngredients] = useState([]);
-
-  //로딩 스피너 화면에 표시하기
-  const [isLoading, setIsLoading] = useState(false);
-
-  //에러 핸들링
-  const [error, setError] = useState();
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState();
 
   //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
   useEffect(() => {
@@ -68,7 +85,8 @@ const Ingredients = () => {
   // 따라서 Search 컴포넌트의 onLoadIngredients에 넘겨준 함수는 이전에 렌더링할 때 사용한 함수의 참조값과 같으므로 이펙트 함수도 재실행되지 않는다.
 
   const addIngredientHandler = async (newIngredient) => {
-    setIsLoading(true);
+    // setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
     //서버: firebase
     const response = await fetch(
       "https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients.json",
@@ -83,8 +101,9 @@ const Ingredients = () => {
 
     const resData = await response.json();
 
-    //응답 받으면 state 업데이트 =>  컴포넌트 리렌더링됨
-    setIsLoading(false);
+    //응답 받으면 state 업데이트
+    // setIsLoading(false);
+    dispatchHttp({ type: "RESPONSE" });
 
     //서버에 업데이트 요청 완료!되면 로컬도 업데이트하기
     // setUserIngredients((prev) => [
@@ -106,7 +125,9 @@ const Ingredients = () => {
 
   // 재료 삭제
   const removeIngredientHandler = async (ingredientId) => {
-    setIsLoading(true);
+    // setIsLoading(true);
+    dispatchHttp({ type: "SEND" });
+
     try {
       // 서버에서 삭제하는 기능
       await fetch(
@@ -118,7 +139,9 @@ const Ingredients = () => {
         }
       );
       //응답 받으면 isLoading 끄기 =>  리렌더링
-      setIsLoading(false);
+      // setIsLoading(false);
+      dispatchHttp({ type: "RESPONSE" });
+
       // 삭제하는 거라서 어떤 응답오는지는 중요하지 않고 화면에 재료 목록 업데이트하는게 중요
 
       // 로컬에서 삭제하는 기능
@@ -132,8 +155,9 @@ const Ingredients = () => {
 
       //fetch는 Promise 반환하므로 catch()로 에러 잡을 수 있다.
     } catch (error) {
-      setError("Something went wrong!");
-      setIsLoading(false);
+      dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong" });
+      // setError("Something went wrong!");
+      // setIsLoading(false);
       // 동일한 시점에 같은 함수 안에서 요청한 모든 상태 업데이트는 일괄 처리 된다(batch)
       //setError로 렌더링 한번 되고 setIsLoading로 렌더링 한 번 더 되는 것이 아니라
       //렌더링 한번 일어난단 소리임 ㅇㅇ
@@ -141,15 +165,19 @@ const Ingredients = () => {
   };
 
   const clearError = () => {
-    setError(null); //모달창 닫기> null은 거짓으로 취급됨
+    // setError(null);
+    //모달창 닫기> null은 거짓으로 취급됨
+    dispatchHttp({ type: "CLEAR" });
   };
 
   return (
     <div className="App">
-      {error && <ErrorModal onClose={clearError}>{error}</ErrorModal>}
+      {httpState.error && (
+        <ErrorModal onClose={clearError}>{httpState.error}</ErrorModal>
+      )}
       <IngredientForm
         onAddIngredient={addIngredientHandler}
-        loading={isLoading}
+        loading={httpState.loading}
       />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
