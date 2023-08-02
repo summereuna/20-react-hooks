@@ -1,14 +1,39 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import Search from "./Search";
 import IngredientList from "./IngredientList";
 import ErrorModal from "../UI/ErrorModal";
 
+//리듀서 함수는 리액트로부터 자동으로 2개의 인자를 받는다.
+//첫 번째 인자: 현재 로컬에 저장된 state값
+//두 번째 인자: 상태를 업데이트하는 액션
+//액션은 객체 형태로, 타입에 따라 상태를 업데이트 하는 액션을 다르게 설정하면 된다.
+//switch 문으로 action의 type에 따라 case를 정의하여 서로 다른 코드를 수행하도록 정의한다.
+const ingredientReducer = (currentIngredients, action) => {
+  switch (action.type) {
+    case "SET": // 설정 GET: 새로운 재료 만들어서 반환
+      return action.ingredients; // 액션의 ingredients 프로퍼티에 기존 state 대체하는 재료 배열 넣어 반환
+    case "ADD": // 추가 POST: 새로운 상태(배열) 스냅샷 반환
+      return [...currentIngredients, action.ingredient]; //현재 상태(배열)에 새로운 항목 추가한 후 새로운 배열 반환
+    case "DELETE": // 삭제 DELETE: 현재 값에 필터 적용하여 모든 재료 항목의 id와 액션의 id 비교하여 동일하지 않은 재료만 남긴 새로운 배열 반환
+      return currentIngredients.filter(
+        (ingredient) => ingredient.id !== action.id
+      );
+    default: // 디폴트 케이스는 없어야 하기 때문에 오류 발생시키자.
+      throw new Error("여기로 오지 마세요!");
+  }
+};
+
 const Ingredients = () => {
+  //useReducer() 호출하여 초기화하기
+  //인수로 리듀서 함수 받음, 두번째 인수는 옵션이긴 한데, 디폴트 state 넣을 수 있다. 여기엔 빈배열 넣자. 이 값이 currentIngredients로 전달된다.
+  const [userIngredients, dispatch] = useReducer(ingredientReducer, []);
+  //useReducer()는 userIngredients와 dispatch 함수를 반환한다.
+
   //여기서 Form에서 인풋 받아서 리스트로 출력함
   //여기서 재료를 관리한다는건 useState()를 사용해야 한다는 뜻
-  const [userIngredients, setUserIngredients] = useState([]);
+  // const [userIngredients, setUserIngredients] = useState([]);
 
   //로딩 스피너 화면에 표시하기
   const [isLoading, setIsLoading] = useState(false);
@@ -30,7 +55,12 @@ const Ingredients = () => {
   //이렇게 무한 루프에 빠져버린다.
   //이를 막기 위해 useCallback()을 사용하자.
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
-    setUserIngredients(filteredIngredients);
+    //setUserIngredients(filteredIngredients);
+    dispatch({
+      type: "SET",
+      ingredients: filteredIngredients,
+    });
+    //useReducer()를 사용하면, 리듀서가 새로운 상태를 반환할 때마다 리액트는 컴포넌트를 리렌더링한다.
   }, []);
 
   //이렇게 하면 이 함수는 다시 실행되지 않고 리액트는 이 함수를 캐싱(cache)하여 리렌더링되어도 남아있게 한다.
@@ -57,13 +87,21 @@ const Ingredients = () => {
     setIsLoading(false);
 
     //서버에 업데이트 요청 완료!되면 로컬도 업데이트하기
-    setUserIngredients((prev) => [
-      ...prev,
-      {
+    // setUserIngredients((prev) => [
+    //   ...prev,
+    //   {
+    //     id: resData.name,
+    //     ...newIngredient,
+    //   },
+    // ]);
+
+    dispatch({
+      type: "ADD",
+      ingredient: {
         id: resData.name,
         ...newIngredient,
       },
-    ]);
+    });
   };
 
   // 재료 삭제
@@ -82,10 +120,15 @@ const Ingredients = () => {
       //응답 받으면 isLoading 끄기 =>  리렌더링
       setIsLoading(false);
       // 삭제하는 거라서 어떤 응답오는지는 중요하지 않고 화면에 재료 목록 업데이트하는게 중요
+
       // 로컬에서 삭제하는 기능
-      setUserIngredients((prevIngredients) =>
-        prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
-      );
+      // setUserIngredients((prevIngredients) =>
+      //   prevIngredients.filter((ingredient) => ingredient.id !== ingredientId)
+      // );
+      dispatch({
+        type: "DELETE",
+        id: ingredientId,
+      });
 
       //fetch는 Promise 반환하므로 catch()로 에러 잡을 수 있다.
     } catch (error) {
