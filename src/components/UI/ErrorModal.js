@@ -2,7 +2,7 @@ import React from "react";
 
 import "./ErrorModal.css";
 
-const ErrorModal = React.memo((props) => {
+const ErrorModal = (props) => {
   return (
     <React.Fragment>
       <div className="backdrop" onClick={props.onClose} />
@@ -17,6 +17,6 @@ const ErrorModal = React.memo((props) => {
       </div>
     </React.Fragment>
   );
-});
+};
 
 export default ErrorModal;
