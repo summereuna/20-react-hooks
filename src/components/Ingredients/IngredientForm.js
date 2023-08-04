@@ -5,6 +5,8 @@ import LoadingIndicator from "../UI/LoadingIndicator";
 import "./IngredientForm.css";
 
 const IngredientForm = React.memo((props) => {
+  console.log("IngredientForm: 재료 정보 입력할 때만 콘솔에 찍혀야 함");
+
   const [enteredTitle, setEnteredTitle] = useState("");
   const [enteredAmount, setEnteredAmount] = useState("");
 

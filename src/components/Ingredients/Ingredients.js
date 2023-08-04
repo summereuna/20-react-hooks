@@ -71,9 +71,9 @@ const Ingredients = () => {
   //따라서 Ingredients 컴포넌트가 리렌더링되어도 이 함수는 새로 생성되지 않아서 참조값이 바뀌지 않는다.
   // 따라서 Search 컴포넌트의 onLoadIngredients에 넘겨준 함수는 이전에 렌더링할 때 사용한 함수의 참조값과 같으므로 이펙트 함수도 재실행되지 않는다.
 
-  const addIngredientHandler = async (newIngredient) => {
+  const addIngredientHandler = useCallback(async (newIngredient) => {
     dispatchHttp({ type: "SEND" });
-
+    console.log("addIngredientHandler");
     //서버 업데이트
     const response = await fetch(
       "https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients.json",
@@ -98,10 +98,10 @@ const Ingredients = () => {
         ...newIngredient,
       },
     });
-  };
+  }, []);
 
   // 재료 삭제
-  const removeIngredientHandler = async (ingredientId) => {
+  const removeIngredientHandler = useCallback(async (ingredientId) => {
     dispatchHttp({ type: "SEND" });
 
     try {
@@ -126,7 +126,7 @@ const Ingredients = () => {
     } catch (error) {
       dispatchHttp({ type: "ERROR", errorMessage: "Something went wrong" });
     }
-  };
+  }, []);
 
   const clearError = () => {
     dispatchHttp({ type: "CLEAR" });

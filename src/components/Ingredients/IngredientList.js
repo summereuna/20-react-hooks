@@ -3,6 +3,7 @@ import React from "react";
 import "./IngredientList.css";
 
 const IngredientList = (props) => {
+  console.log("IngredientList: 얘는 몇번이나 재렌더링 되나 보자");
   return (
     <section className="ingredient-list">
       <h2>Loaded Ingredients</h2>
