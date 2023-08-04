@@ -2,7 +2,7 @@ import React from "react";
 
 import "./IngredientList.css";
 
-const IngredientList = React.memo((props) => {
+const IngredientList = (props) => {
   console.log("IngredientList: 얘는 몇번이나 재렌더링 되나 보자");
   return (
     <section className="ingredient-list">
@@ -21,6 +21,6 @@ const IngredientList = React.memo((props) => {
       </ul>
     </section>
   );
-});
+};
 
 export default IngredientList;

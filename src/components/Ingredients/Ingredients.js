@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 
 import IngredientForm from "./IngredientForm";
 import Search from "./Search";
@@ -132,6 +132,20 @@ const Ingredients = () => {
     dispatchHttp({ type: "CLEAR" });
   };
 
+  //useMemo()를 호출하고 함수를 인수로 넘긴다.
+  // 인수로 넘겨지는 함수는 우리가 저장하는 값이 아니라 리액트가 나중에 실행할 함수이다.
+  // 이 함수가 반환하는 값이 우리가 저장할 값으로, 여기서는 IngredientList 컴포넌트를 반환하면 된다.
+  const ingredientList = useMemo(() => {
+    return (
+      <IngredientList
+        ingredients={userIngredients}
+        onRemoveItem={removeIngredientHandler}
+      />
+    );
+  }, [userIngredients, removeIngredientHandler]);
+  // userIngredients, removeIngredientHandler 가 바뀔경우 리액트는 ingredientList 함수를 실행하여 저장할 새로운 객체를 만든다.
+  // 그러고 나서 새로운 값으로 IngredientList 컴포넌트가 재구성되어 반환된다.
+
   return (
     <div className="App">
       {httpState.error && (
@@ -143,10 +157,7 @@ const Ingredients = () => {
       />
       <section>
         <Search onLoadIngredients={filteredIngredientsHandler} />
-        <IngredientList
-          ingredients={userIngredients}
-          onRemoveItem={removeIngredientHandler}
-        />
+        {ingredientList}
       </section>
     </div>
   );
