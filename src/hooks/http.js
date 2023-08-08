@@ -19,7 +19,7 @@ const httpReducer = (currentHttpState, action) => {
         error: null,
         data: null,
         extra: null,
-        identifier: action.identifier,
+        identifier: action.reqIdentifier,
       }; // 새 요청 보낼 때 data는 무조건 null로 재설정
     //요청 전송 시 extra 초기화되도록 null
 
@@ -61,12 +61,12 @@ const useHttp = () => {
       const fetchData = async () => {
         //불필요한 리렌더링 막기 위해 useCallback으로 감싸기
         dispatchHttp({ type: "SEND", identifier: reqIdentifier }); //stateful(state를 이용하는) 부분: 여기서 리듀서와 상호작용함
-
+        console.log(reqIdentifier);
         try {
           // 서버에 삭제
           const response = await fetch(url, {
-            method: method,
-            body: body,
+            method,
+            body,
             headers: { "Content-Type": "application/json" },
           });
 
@@ -111,3 +111,44 @@ const useHttp = () => {
 };
 
 export default useHttp;
+
+// const sendRequest = useCallback(async function (
+//   url,
+//   method,
+//   body,
+//   reqExtra,
+//   reqIdentifier
+// ) {
+//   //불필요한 리렌더링 막기 위해 useCallback으로 감싸기
+//   dispatchHttp({ type: "SEND", identifier: reqIdentifier }); //stateful(state를 이용하는) 부분: 여기서 리듀서와 상호작용함
+
+//   try {
+//     // 서버에 요청
+//     const response = await fetch(url, {
+//       method: method,
+//       body: body,
+//       headers: { "Content-Type": "application/json" },
+//     });
+
+//     const resData = await response.json();
+
+//     //훅은 http 요청만 신경쓰면 된다. 이 요청을 어떻게 관리할지만 생각하면 된다.
+//     //응답 받아서 어떻게 처리할 지는 컴포넌트의 핸들러들이 알아서 할 일이므로 데이터를 컴포넌트에게 돌려주자.
+//     //🔥응답 받은 데이터를 요청을 만든 컴포넌트에게 돌려주기 위해 httpState에 새로운 상태, data를 추가하자.
+
+//     //🔥응답 데이터 state에 저장
+//     dispatchHttp({
+//       type: "RESPONSE",
+//       responseData: resData,
+//       extra: reqExtra,
+//     });
+
+//     //fetch는 Promise 반환하므로 catch()로 에러 캐치
+//   } catch (error) {
+//     dispatchHttp({
+//       type: "ERROR",
+//       errorMessage: "Something went wrong",
+//     });
+//   }
+// },
+// []);

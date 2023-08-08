@@ -54,15 +54,28 @@ const Ingredients = () => {
   //그럼 아래 Effect가 실행되고, 딜레트 액션이 디스패치되서 재료 목록이 업데이트 된다.
 
   //응답 처리는 useEffect 안에서
+  // useEffect(() => {
+  //   console.log("그림 그려라라라");
+  //   //newIngredient 값이 있으면 추가 요청 / 없으면 삭제 요청
+  //   if (!isLoading && !error && reqIdentifier === "REMOVE_INGREDIENT") {
+  //     dispatch({
+  //       type: "DELETE",
+  //       id: reqExtra,
+  //     });
+  //   } else if (!isLoading && !error && reqIdentifier === "ADD_INGREDIENT") {
+  //     dispatch({
+  //       type: "ADD",
+  //       ingredient: {
+  //         id: data.name, //서버에서 응답받은 data
+  //         ...reqExtra,
+  //       },
+  //     });
+  //   }
+  // }, [isLoading, error, reqIdentifier, data, reqExtra]);
+  //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
+
   useEffect(() => {
-    console.log("그림 그려라라라");
-    //newIngredient 값이 있으면 추가 요청 / 없으면 삭제 요청
-    if (!isLoading && !error && reqIdentifier === "REMOVE_INGREDIENT") {
-      dispatch({
-        type: "DELETE",
-        id: reqExtra,
-      });
-    } else if (!isLoading && !error && reqIdentifier === "ADD_INGREDIENT") {
+    if (data) {
       dispatch({
         type: "ADD",
         ingredient: {
@@ -71,8 +84,7 @@ const Ingredients = () => {
         },
       });
     }
-  }, [isLoading, error, reqIdentifier, data, reqExtra]);
-  //Ingredients 컴포넌트 렌더링 될 때 마다 모든 재료 목록 가져와야 하는데 이미 Search에서 가져와서 목록에 넣어주고 있기 때문에 두번 중복으로 가져올 필요 없음
+  }, [data, reqExtra]);
 
   const filteredIngredientsHandler = useCallback((filteredIngredients) => {
     dispatch({
@@ -87,7 +99,7 @@ const Ingredients = () => {
       sendRequest(
         "https://react-http-35c4a-default-rtdb.firebaseio.com/ingredients.json",
         "POST",
-        JSON.stringify(newIngredient), // 추가할 재료 id 없는 상태로 받음
+        JSON.stringify(newIngredient), // 추가할 재료 id 없는 상태로 받음,
         newIngredient, // 추가할 새로운 재료
         "ADD_INGREDIENT" //식별자
       );
@@ -110,6 +122,10 @@ const Ingredients = () => {
         "REMOVE_INGREDIENT" //식별자
       );
 
+      dispatch({
+        type: "DELETE",
+        id: ingredientId,
+      });
       //fetch()는 항상 프로미스를 반환하기 때문에 fetch()가 쓰인 sendRequest() 함수도 프로미스를 반환한다.
       //따라서 then/catch 블록을 추가하여 이 핸들러 안에서 응답을 처리할 수도 있다.
 
